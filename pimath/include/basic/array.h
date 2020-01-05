@@ -15,14 +15,14 @@ NAMESPACE_PIMATH_BEGIN
 
 // For N dimensional vector
 template<int dim, typename T, InstSetExt ISE = default_instruction_set, typename Enable = void>
-struct VectorBase 
+struct ArrayBase 
 {
     T data[dim];
 };
 
 // Special form for 1, 2, 3, 4 dimensions.
 template<typename T, InstSetExt ISE>
-struct VectorBase<1, T, ISE>
+struct ArrayBase<1, T, ISE>
 {
     union {
         T data[1];
@@ -36,7 +36,7 @@ struct VectorBase<1, T, ISE>
 };
 
 template<typename T, InstSetExt ISE>
-struct VectorBase<2, T, ISE>
+struct ArrayBase<2, T, ISE>
 {
     union {
         T data[2];
@@ -50,7 +50,7 @@ struct VectorBase<2, T, ISE>
 };
 
 template<typename T, InstSetExt ISE>
-struct VectorBase<3, T, ISE, 
+struct ArrayBase<3, T, ISE,
     typename std::enable_if_t<(!std::is_same<T, float32>::value || ISE < InstSetExt::SSE)>>
 {
     union {
@@ -67,7 +67,7 @@ struct VectorBase<3, T, ISE,
 // SIMD one
 template<InstSetExt ISE>
 struct PM_ALIGNED(16)
-    VectorBase<3, float32, ISE,
+	ArrayBase<3, float32, ISE,
     typename std::enable_if_t<ISE >= InstSetExt::SSE>>
 {
     union {
@@ -81,12 +81,32 @@ struct PM_ALIGNED(16)
         };
     };
 
-    VectorBase(__m128 v) : v(v) {}
-    VectorBase(float32 x = 0.0f) : v(_mm_set_ps1(x)) {}
+	ArrayBase(__m128 v) : v(v) {}
+	ArrayBase(float32 x = 0.0f) : v(_mm_set_ps1(x)) {}
+};
+
+template<InstSetExt ISE>
+struct PM_ALIGNED(16)
+    ArrayBase<3, float64, ISE,
+    typename std::enable_if_t<ISE >= InstSetExt::AVX>>
+{
+    union {
+        __m256d v;
+        float64 data[4];
+        struct {
+            float64 x, y, z;
+        };
+        struct {
+            float64 r, g, b;
+        };
+    };
+
+    ArrayBase(__m256d _v) : v(_v) {}
+    ArrayBase(float64 x = 0.0f) : v(_mm256_set1_pd(x)) {}
 };
 
 template<typename T, InstSetExt ISE>
-struct VectorBase<4, T, ISE>
+struct ArrayBase<4, T, ISE>
 {
     union {
         T data[4];
@@ -102,7 +122,7 @@ struct VectorBase<4, T, ISE>
 // SIMD one
 template<InstSetExt ISE>
 struct PM_ALIGNED(16)
-    VectorBase<4, float32, ISE,
+    ArrayBase<4, float32, ISE,
     typename std::enable_if_t<ISE >= InstSetExt::SSE>>
 {
     union {
@@ -116,15 +136,15 @@ struct PM_ALIGNED(16)
         };
     };
 
-    VectorBase(__m128 v) : v(v) {}
-    VectorBase(float32 x = 0.0f) : v(_mm_set_ps1(x)) {}
+    ArrayBase(__m128 v) : v(v) {}
+    ArrayBase(float32 x = 0.0f) : v(_mm_set_ps1(x)) {}
 };
 
 //=================================================================================
 // Vectors for both math calculations and graphics (mainly designed for OpenGL)
 //=================================================================================
 template<int dim, typename T, InstSetExt ISE = default_instruction_set>
-struct VectorND : public VectorBase<dim, T, ISE> 
+struct ArrayND : public ArrayBase<dim, T, ISE> 
 {
     // some special values to determine whether or not using SIMD (from Taichi)
     template<int dim_, typename T_, InstSetExt ISE_>
@@ -132,16 +152,16 @@ struct VectorND : public VectorBase<dim, T, ISE>
         std::is_same<T_, float32>::value && ISE_ >= InstSetExt::SSE;
 
     // constructors =============================================
-    VectorND() { 
+    ArrayND() { 
         for (int i = 0; i < dim; ++i)
             this->data[i] = T();
     }
-    VectorND(T val) { 
+    ArrayND(T val) { 
         for (int i = 0; i < dim; ++i)
             this->data[i] = val; 
     }
 
-    explicit VectorND(const std::array<T, dim> &o) {
+    explicit ArrayND(const std::array<T, dim> &o) {
         for (int i = 0; i < dim; ++i) {
             this->data[i] = o[i];
         }
@@ -149,14 +169,14 @@ struct VectorND : public VectorBase<dim, T, ISE>
     
     // copy constructors
     template <int dim_>
-    explicit VectorND(const VectorND<dim_, T, ISE> &o) : VectorND() {
+    explicit ArrayND(const ArrayND<dim_, T, ISE> &o) : ArrayND() {
         int dimmin = std::min(dim, dim_);
         for (int i = 0; i < dimmin; ++i)
             this->data[i] = o[i];
     }
 
     // multi parameters constructor
-    explicit VectorND(const std::initializer_list<T> &v) : VectorND() {
+    explicit ArrayND(const std::initializer_list<T> &v) : ArrayND() {
         int i = 0;
         for (auto iter : v) {
             if (i >= dim)
@@ -168,13 +188,13 @@ struct VectorND : public VectorBase<dim, T, ISE>
 
     template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE,
         typename std::enable_if_t<SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
-        VectorND(__m128 value) {
+        ArrayND(__m128 value) {
         this->v = value;
     }
 
     // functions constructors
     template<typename F, std::enable_if_t<std::is_convertible<F, std::function<T(int)>>::value, int> = 0>
-    explicit VectorND(const F &f) {
+    explicit ArrayND(const F &f) {
         for (int i = 0; i < dim; ++i)
             this->data[i] = f(i);
     }
@@ -201,34 +221,34 @@ struct VectorND : public VectorBase<dim, T, ISE>
     // General ones
     template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE, 
         typename std::enable_if_t<!SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
-    PM_INLINE VectorND operator+(const VectorND &v2) const {
-        return VectorND([=](int i) { return this->data[i] + v2[i]; });
+    PM_INLINE ArrayND operator+(const ArrayND &v2) const {
+        return ArrayND([=](int i) { return this->data[i] + v2[i]; });
     }
 
     template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE,
         typename std::enable_if_t<!SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
-        PM_INLINE VectorND operator-(const VectorND &v2) const {
-        return VectorND([=](int i) { return this->data[i] - v2[i]; });
+        PM_INLINE ArrayND operator-(const ArrayND &v2) const {
+        return ArrayND([=](int i) { return this->data[i] - v2[i]; });
     }
 
     template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE,
         typename std::enable_if_t<!SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
-        PM_INLINE VectorND operator*(const VectorND &v2) const {
-        return VectorND([=](int i) { return this->data[i] * v2[i]; });
+        PM_INLINE ArrayND operator*(const ArrayND &v2) const {
+        return ArrayND([=](int i) { return this->data[i] * v2[i]; });
     }
 
     template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE,
         typename std::enable_if_t<!SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
-        PM_INLINE VectorND operator/(const VectorND &v2) const {
-        return VectorND([=](int i) { return this->data[i] / v2[i]; });
+        PM_INLINE ArrayND operator/(const ArrayND &v2) const {
+        return ArrayND([=](int i) { return this->data[i] / v2[i]; });
     }
 
-    PM_INLINE VectorND& operator=(const VectorND &v2) {
+    PM_INLINE ArrayND& operator=(const ArrayND &v2) {
         memcpy(this, &v2, sizeof(*this));
         return *this;
     }
 
-    PM_INLINE bool operator==(const VectorND &v2) const {
+    PM_INLINE bool operator==(const ArrayND &v2) const {
         for (int i = 0; i < dim; ++i)
             if (!(this->data[i] == v2[i]))
                 return false;
@@ -238,56 +258,108 @@ struct VectorND : public VectorBase<dim, T, ISE>
     // SIMD ones
     template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE,
         typename std::enable_if_t<SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
-        PM_INLINE VectorND operator+(const VectorND &v2) const {
-        return VectorND(_mm_add_ps(this->v, v2.v));
+        PM_INLINE ArrayND operator+(const ArrayND &v2) const {
+        return ArrayND(_mm_add_ps(this->v, v2.v));
     }
 
     template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE,
         typename std::enable_if_t<SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
-        PM_INLINE VectorND operator-(const VectorND &v2) const {
-        return VectorND(_mm_sub_ps(this->v, v2.v));
+        PM_INLINE ArrayND operator-(const ArrayND &v2) const {
+        return ArrayND(_mm_sub_ps(this->v, v2.v));
     }
 
     template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE,
         typename std::enable_if_t<SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
-        PM_INLINE VectorND operator*(const VectorND &v2) const {
-        return VectorND(_mm_mul_ps(this->v, v2.v));
+        PM_INLINE ArrayND operator*(const ArrayND &v2) const {
+        return ArrayND(_mm_mul_ps(this->v, v2.v));
     }
 
     template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE,
         typename std::enable_if_t<SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
-        PM_INLINE VectorND operator/(const VectorND &v2) const {
-        return VectorND(_mm_div_ps(this->v, v2.v));
+        PM_INLINE ArrayND operator/(const ArrayND &v2) const {
+        return ArrayND(_mm_div_ps(this->v, v2.v));
     }
 
     template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE,
         typename std::enable_if_t<SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
-        PM_INLINE VectorND& operator=(__m128 v) const {
+        PM_INLINE ArrayND& operator=(__m128 v) const {
         this->v = v;
         return *this;
     }
 
+	// ========================================================================
+	// scalar arithmetic
+	// ========================================================================
+	PM_INLINE ArrayND operator+(const T scalar) {
+		if (dim > 4)
+			return ArrayND([=](int i) { return this->data[i] + scalar; });
+		else
+			return (*this) + ArrayND(scalar);			// using this way to leverage SIMD
+	}
+	PM_INLINE ArrayND& operator+=(const T scalar) {
+		if (dim > 4)
+			for (int i = 0; i < dim; ++i)
+				this->data[i] = this->data[i] + scalar;
+		else
+			*this = (*this) + ArrayND(scalar);
+		return (*this);
+	}
+
+	PM_INLINE ArrayND operator-(const T scalar) {
+		if (dim > 4)
+			return ArrayND([=](int i) { return this->data[i] - scalar; });
+		else
+			return (*this) - ArrayND(scalar);
+	}
+	PM_INLINE ArrayND& operator-=(const T scalar) {
+		if (dim > 4)
+			for (int i = 0; i < dim; ++i)
+				this->data[i] = this->data[i] - scalar;
+		else
+			*this = (*this) - ArrayND(scalar);
+		return (*this);
+	}
+	PM_INLINE ArrayND operator*(const T scalar) {
+		if (dim > 4)
+			return ArrayND([=](int i) { return this->data[i] * scalar; });
+		else
+			return (*this) * ArrayND(scalar);
+	}
+	PM_INLINE ArrayND& operator*=(const T scalar) {
+		if (dim > 4)
+			for (int i = 0; i < dim; ++i)
+				this->data[i] = this->data[i] * scalar;
+		else
+			*this = (*this) * ArrayND(scalar);
+		return (*this);
+	}
+	PM_INLINE ArrayND operator/(const T scalar) {
+		if (dim > 4)
+			return ArrayND([=](int i) { return this->data[i] / scalar; });
+		else
+			return (*this) / ArrayND(scalar);
+	}
+	PM_INLINE ArrayND& operator/=(const T scalar) {
+		if (dim > 4)
+			for (int i = 0; i < dim; ++i)
+				this->data[i] = this->data[i] / scalar;
+		else
+			*this = (*this) / ArrayND(scalar);
+		return (*this);
+	}
+
     // some other vector operators
-    T dot(const VectorND &v2) const {
+    T dot(const ArrayND &v2) const {
         T ret = T();
         for (int i = 0; i < dim; ++i)
             ret += this->data[i] * v2[i];
-        return ret;
-    }
-
-    template<typename std::enable_if_t<dim == 3, int> = 0>
-    VectorND cross(const VectorND &v2) const {
-        VectorND ret;
-        ret[0] = this->y * v2.z - this->z * v2.y;
-        ret[1] = this->z * v2.x - this->x * v2.z;
-        ret[2] = this->x * v2.y - this->y * v2.x;
         return ret;
     }
 };
 
 // IO for vectors
 template<int dim, typename T, InstSetExt ISE>
-const std::ostream& operator<<(std::ostream &os, const VectorND<dim, T, ISE>&v)
+const std::ostream& operator<<(std::ostream &os, const ArrayND<dim, T, ISE>&v)
 {
     for (int i = 0; i < dim - 1; ++i)
         os << v.data[i] << ',';
