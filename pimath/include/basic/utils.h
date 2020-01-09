@@ -5,7 +5,7 @@
 #define NAMESPACE_PIMATH_END }
 
 // used for compile bits
-#define PIMATH_64BIT
+#define PIMATH_32BIT
 
 NAMESPACE_PIMATH_BEGIN
 // Instruction Set Extension, learnt from Taichi (https://github.com/yuanming-hu/taichi)
@@ -22,6 +22,11 @@ constexpr InstSetExt default_instruction_set = InstSetExt::AVX2;
 #else
 #define PM_ISE_NONE
 constexpr InstSetExt default_instruction_set = InstSetExt::None;
+#endif
+
+// OpenMP
+#ifndef PM_OPENMP
+#define PM_NOOPENMP
 #endif
 
 // Inline define

@@ -106,7 +106,8 @@ struct PM_ALIGNED(16)
 };
 
 template<typename T, InstSetExt ISE>
-struct ArrayBase<4, T, ISE>
+struct ArrayBase<4, T, ISE,
+	typename std::enable_if_t<(!std::is_same<T, float32>::value || ISE < InstSetExt::SSE)>>
 {
     union {
         T data[4];
@@ -197,6 +198,25 @@ struct ArrayND : public ArrayBase<dim, T, ISE>
     explicit ArrayND(const F &f) {
         for (int i = 0; i < dim; ++i)
             this->data[i] = f(i);
+    }
+
+    // special case constructors
+    explicit ArrayND(T v1, T v2) {
+        this->data[0] = v1;
+        this->data[1] = v2;
+    }
+
+    explicit ArrayND(T v1, T v2, T v3) {
+        this->data[0] = v1;
+        this->data[1] = v2;
+        this->data[2] = v3;
+    }
+
+    explicit ArrayND(T v1, T v2, T v3, T v4) {
+        this->data[0] = v1;
+        this->data[1] = v2;
+        this->data[2] = v3;
+        this->data[3] = v4;
     }
     
     // =========================================================

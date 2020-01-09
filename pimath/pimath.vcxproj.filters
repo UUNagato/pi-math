@@ -13,19 +13,31 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="头文件\basic">
+      <UniqueIdentifier>{4209e108-e693-45a7-9453-51aeb9e107ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\advanved">
+      <UniqueIdentifier>{d9f5860d-4f9f-470b-a331-d1ae9778eadb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\basic\datatype.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="include\basic\utils.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="include\basic\matrix.h">
+    <ClInclude Include="include\pimath.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="include\basic\array.h">
-      <Filter>头文件</Filter>
+      <Filter>头文件\basic</Filter>
+    </ClInclude>
+    <ClInclude Include="include\basic\datatype.h">
+      <Filter>头文件\basic</Filter>
+    </ClInclude>
+    <ClInclude Include="include\basic\matrix.h">
+      <Filter>头文件\basic</Filter>
+    </ClInclude>
+    <ClInclude Include="include\advanced\transform.h">
+      <Filter>头文件\advanved</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

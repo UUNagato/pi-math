@@ -1,18 +1,17 @@
 #include <iostream>
+#include <chrono>
 
-// #define PM_ISE_SSE
-#include "include/basic/array.h"
-#include "include/basic/matrix.h"
+#define PM_ISE_SSE
+
+#include "include/pimath.h"
 
 using namespace std;
+using namespace NAMESPACE_PIMATH;
 
 int main()
 {
-    Pimath::MatrixND<3, 3, float> m1{ 1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f };
-    Pimath::MatrixND<2, 2, float> m2{ 1.f, 0.f, 1.f, 0.f };
-	m1 += 1.f;
-    std::cout << m1;
-
+	Matrix4 m{ 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f };
+	std::cout << inversed(m);
 	system("pause");
     return 0;
 }
