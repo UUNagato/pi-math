@@ -20,9 +20,28 @@ public:
 	~Transform() {}
 
 	Vector3 applyNormal(const Vector3& normal) {
-		Vector4 vec{ normal.x, normal.y, normal.z, 1_f };
-		Vector4 transformed = inv_m.transpose() * vec;
+		Vector3 transformed = inv_m.transpose().applyTransform(normal);
 		return Vector3(transformed).normalize();
+	}
+
+	Vector3 transformPoint(const Vector3& point) {
+		Vector4 p(point, 1_f);
+		Vector4 transformed = m * p;
+		return Vector3(p);
+	}
+
+	Vector3 transformDirection(const Vector3& dir) {
+		Vector3 transformed = m.applyTransform(dir);
+		return transformed;
+	}
+
+	void translate(const Vector3& distance) {
+		m(0, 3) += distance.x;
+		m(1, 3) += distance.y;
+		m(2, 3) += distance.z;
+		inv_m(0, 3) += -distance.x;
+		inv_m(1, 3) += -distance.y;
+		inv_m(2, 3) += -distance.z;
 	}
 
 private:

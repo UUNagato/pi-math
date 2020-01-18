@@ -99,10 +99,11 @@ struct MatrixBase<1, 4, T, ISE>
 template<int rows, int cols, typename T, InstSetExt ISE = default_instruction_set>
 struct MatrixND : public MatrixBase<rows, cols, T, ISE>
 {
-    static constexpr bool IS_VECTOR = (cols == 1) || (rows == 1);
+    template<int rows_ = rows, int cols_ = cols>
+    static constexpr bool IS_VECTOR = (cols_ == 1) || (rows_ == 1);
 
     template<int cols_ = cols, typename T_ = T, InstSetExt ISE_ = ISE>
-    static constexpr bool MATRIX_SSE = (cols_ <= 4) && std::is_same<T_, float32>::value && ISE_ >= InstSetExt::SSE;
+    static constexpr bool MATRIX_SSE = (cols_ == 3 || cols_ == 4) && std::is_same<T_, float32>::value && ISE_ >= InstSetExt::SSE;
 
     // Constructors
     MatrixND() {
@@ -119,6 +120,21 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
     // Copy Constructor
     MatrixND(const MatrixND& v) {
         memcpy(this, &v, sizeof(*this));
+    }
+
+    // Special Vector Constructor
+    template<int rows_ = rows, int cols_ = cols,
+        int vrows = rows, int vcols = cols, InstSetExt ISE_ = ISE,
+    typename std::enable_if_t<IS_VECTOR<rows_, cols_> && IS_VECTOR<vrows, vcols>, int> = 0>
+        MatrixND(const MatrixND<vrows, vcols, T, ISE_>& v, T default_value) {
+        int size_a = std::max(rows_, cols_);
+        int size_b = std::max(vrows, vcols);
+        int shorter = std::min(size_a, size_b);
+        int longer = std::max(size_a, size_b);
+        for (int i = 0; i < shorter; ++i)
+            (*this)[i] = v[i];
+        for (int i = shorter; i < longer; ++i)
+            (*this)[i] = default_value;
     }
 
     // Function Constructor
@@ -203,10 +219,32 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
     }
 
     // some basic operators
+    template<int rows_ = rows, int cols_ = cols,
+        typename std::enable_if_t<IS_VECTOR<rows_, cols_>, int> = 0>
+        PM_INLINE T& operator[] (size_t index) {
+        if (cols_ == 1)
+            return this->data[0][index];
+        else
+            return this->data[index];
+    }
+
+    template<int rows_ = rows, int cols_ = cols,
+        typename std::enable_if_t<!IS_VECTOR<rows_, cols_>, int> = 0>
     PM_INLINE ArrayND<rows, T, ISE>& operator[] (size_t index) {
         return this->data[index];
     }
 
+    template<int rows_ = rows, int cols_ = cols,
+        typename std::enable_if_t<IS_VECTOR<rows_, cols_>, int> = 0>
+        PM_INLINE const T& operator[] (size_t index) {
+        if (cols_ == 1)
+            return this->data[0][index];
+        else
+            return this->data[index];
+    }
+
+    template<int rows_ = rows, int cols_ = cols,
+        typename std::enable_if_t<!IS_VECTOR<rows_, cols_>, int> = 0>
     PM_INLINE const ArrayND<rows, T, ISE>& operator[] (size_t index) const {
         return this->data[index];
     }
@@ -264,7 +302,6 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
         static void multiply(const MatrixND<lrows, lcols, T_, ISE_>& m1,
             const MatrixND<rrows, rcols, T_, ISE_>& m2, MatrixND<lrows, rcols, T_, ISE_>* ret)
     {
-        static_assert(lcols == rrows, "The multiplication matrix have incompatible dimensions.");
         for (int r = 0; r < lrows; ++r) {
             for (int c = 0; c < rcols; ++c) {
                 T tmp = T();
@@ -281,12 +318,11 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
         static void multiply_SSE(const MatrixND<lrows, lcols, T_, ISE_>& m1,
             const MatrixND<rrows, rcols, T_, ISE_>& m2, MatrixND<lrows, rcols, T_, ISE_>* ret)
     {
-        static_assert(lcols == rrows, "The multiplication matrix have incompatible dimensions.");
         // pack first matrix rows into four __m128
         float r[4][4] = { 0 };
         for (int i = 0; i < lrows; ++i)
             for (int j = 0; j < lcols; ++j)
-                r[j][i] = m1(i, j);
+                r[i][j] = m1(i, j);
         __m128 rr[4];
         rr[0] = _mm_load_ps(r[0]);
         rr[1] = _mm_load_ps(r[1]);
@@ -295,7 +331,7 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
 
         for (int r = 0; r < lrows; ++r) {
             for (int c = 0; c < rcols; ++c) {
-                _mm_store_ss(&(ret->operator()(r, c)), _mm_dp_ps(rr[r], m2[c].v, 0xf1));
+                _mm_store_ss(&(ret->operator()(r, c)), _mm_dp_ps(rr[r], m2.data[c].v, 0xf1));
             }
         }
     }
@@ -305,6 +341,7 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
         typename std::enable_if_t<!MATRIX_SSE<cols_, T, ISE> || !MATRIX_SSE<rrows, T_, ISE_>, int> = 0>
         PM_INLINE MatrixND<rows, rcols, T, ISE> operator* (const MatrixND<rrows, rcols, T_, ISE_>& m2)
     {
+        static_assert(cols_ == rrows, "The multiplication matrix have incompatible dimensions.");
         MatrixND<rows, rcols, T, ISE> ret;
         multiply(*this, m2, &ret);
         return ret;
@@ -315,9 +352,41 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
         typename std::enable_if_t<MATRIX_SSE<cols_, T, ISE> && MATRIX_SSE<rrows, T_, ISE_>, int> = 0>
         PM_INLINE MatrixND<rows, rcols, T, ISE> operator* (const MatrixND<rrows, rcols, T_, ISE_>& m2)
     {
-        // std::cout << "SSE used" << std::endl;
+        static_assert(cols_ == rrows, "The multiplication matrix have incompatible dimensions.");
         MatrixND<rows, rcols, T, ISE> ret;
         multiply_SSE(*this, m2, &ret);
+        return ret;
+    }
+
+    // A really special function used for speed up transformation, directly transform a vector3 by a 4x4 matrix
+    PM_INLINE MatrixND<3, 1, T, ISE> applyTransform(const MatrixND<3, 1, T, ISE>& m2)
+    {
+        static_assert(rows == 4 && cols == 4, "applyTransform can only be used for 4x4 matrix times 3-length colume vector");
+        MatrixND<3, 1, T, ISE> ret;
+        if (MATRIX_SSE<4, T, ISE>&& MATRIX_SSE<3, T, ISE>) {
+            // pack first matrix rows into four __m128
+            float r[3][4] = { 0 };
+            for (int i = 0; i < 3; ++i)
+                for (int j = 0; j < 4; ++j)
+                    r[i][j] = (*this)(i, j);
+            __m128 rr[3];
+            rr[0] = _mm_load_ps(r[0]);
+            rr[1] = _mm_load_ps(r[1]);
+            rr[2] = _mm_load_ps(r[2]);
+
+            for (int r = 0; r < 3; ++r) {
+                _mm_store_ss(&ret(r, 0), _mm_dp_ps(rr[r], m2.data[0].v, 0xf1));
+            }
+        }
+        else {
+            for (int r = 0; r < 3; ++r) {
+                T v = T(0);
+                for (int c = 0; c < 3; ++c)
+                    v = v + (*this)(r, c) * m2(c, 0);
+                ret(r, 0) = v;
+            }
+        }
+
         return ret;
     }
 
