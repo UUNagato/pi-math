@@ -39,6 +39,9 @@
     <ClInclude Include="include\advanced\transform.h">
       <Filter>头文件\advanved</Filter>
     </ClInclude>
+    <ClInclude Include="include\basic\funcs.h">
+      <Filter>头文件\basic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tester.cpp">

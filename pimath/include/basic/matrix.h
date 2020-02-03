@@ -25,8 +25,12 @@ struct MatrixBase<1, 1, T, ISE>
     MatrixBase() {}
     union {
         ArrayND<1, T, ISE> data[1];
-        T x;
-        T r;
+        struct {
+            T x;
+        };
+        struct {
+            T r;
+        };
     };
 };
 
@@ -36,8 +40,12 @@ struct MatrixBase<2, 1, T, ISE>
     MatrixBase() {}
     union {
 		ArrayND<2, T, ISE> data[1];
-        T x, y;
-        T r, g;
+        struct {
+            T x, y;
+        };
+        struct {
+            T r, g;
+        };
     };
 };
 
@@ -47,8 +55,12 @@ struct MatrixBase<3, 1, T, ISE>
     MatrixBase() {}
     union {
 		ArrayND<3, T, ISE> data[1];
-        T x, y, z;
-        T r, g, b;
+        struct {
+            T x, y, z;
+        };
+        struct {
+            T r, g, b;
+        };
     };
 };
 
@@ -58,8 +70,12 @@ struct MatrixBase<4, 1, T, ISE>
     MatrixBase() {}
     union {
 		ArrayND<4, T, ISE> data[1];
-        T x, y, z, w;
-        T r, g, b, a;
+        struct {
+            T x, y, z, w;
+        };
+        struct {
+            T r, g, b, a;
+        };
     };
 };
 
@@ -69,8 +85,12 @@ struct MatrixBase<1, 2, T, ISE>
     MatrixBase() {}
     union {
 		ArrayND<1, T, ISE> data[2];
-        T x, y;
-        T r, g;
+        struct {
+            T x, y;
+        };
+        struct {
+            T r, g;
+        };
     };
 };
 
@@ -80,8 +100,12 @@ struct MatrixBase<1, 3, T, ISE>
     MatrixBase() {}
     union {
 		ArrayND<1, T, ISE> data[3];
-        T x, y, z;
-        T r, g, b;
+        struct {
+            T x, y, z;
+        };
+        struct {
+            T r, g, b;
+        };
     };
 };
 
@@ -91,8 +115,12 @@ struct MatrixBase<1, 4, T, ISE>
     MatrixBase() {}
     union {
 		ArrayND<1, T, ISE> data[4];
-        T x, y, z, w;
-        T r, g, b, a;
+        struct {
+            T x, y, z, w;
+        };
+        struct {
+            T r, g, b, a;
+        };
     };
 };
 
@@ -172,37 +200,19 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
         this->y = y;
     }
 
-    template<int rows_ = rows, int cols_ = cols, typename T_ = T, InstSetExt ISE_ = ISE,
-        typename std::enable_if_t<!ArrayND<rows_, T_, ISE_>::SIMD_FLAG, int> = 0>
-        explicit MatrixND(T x, T y, T z) {
+    explicit MatrixND(T x, T y, T z) {
         static_assert((rows == 1 && cols == 3) || (rows == 3 && cols == 1), "Matrix must be a 3-dimensional vector");
         this->x = x;
         this->y = y;
         this->z = z;
     }
 
-    template<int rows_ = rows, int cols_ = cols, typename T_ = T, InstSetExt ISE_ = ISE,
-        typename std::enable_if_t<ArrayND<rows_, T_, ISE_>::SIMD_FLAG, int> = 0>
-        explicit MatrixND(T x, T y, T z) {
-        static_assert(rows == 3 && cols == 1, "Matrix must be a 3-dimensional vector");
-        this->data[0].v = _mm_set_ps(x, y, z, 0f);
-    }
-
-    template<int rows_ = rows, int cols_ = cols, typename T_ = T, InstSetExt ISE_ = ISE,
-        typename std::enable_if_t<!ArrayND<rows_, T_, ISE_>::SIMD_FLAG, int> = 0>
-        explicit MatrixND(T x, T y, T z, T w) {
-        static_assert((rows == 1 && cols == 4) || (rows == 4 && cols == 1), "Matrix must be a 4-dimensional vector");
+    explicit MatrixND(T x, T y, T z, T w) {
+        static_assert((rows == 1 && cols == 4) || (rows == 4 && cols == 1), "Matrix must be a 3-dimensional vector");
         this->x = x;
         this->y = y;
         this->z = z;
         this->w = w;
-    }
-
-    template<int rows_ = rows, int cols_ = cols, typename T_ = T, InstSetExt ISE_ = ISE,
-        typename std::enable_if_t<ArrayND<rows_, T_, ISE_>::SIMD_FLAG, int> = 0>
-        explicit MatrixND(T x, T y, T z, T w) {
-        static_assert(rows == 4 && cols == 1, "Matrix must be a 3-dimensional vector");
-        this->data[0].v = _mm_set_ps(x, y, z, w);
     }
 
     // Special Matrix initializer
@@ -262,16 +272,23 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
         return *this;
     }
 
-    PM_INLINE bool operator== (const MatrixND& m) {
+    PM_INLINE bool operator== (const MatrixND& m) const {
         for (int i = 0; i < cols; ++i)
             if (!(this->data[i] == m[i]))
                 return false;
         return true;
     }
 
+    PM_INLINE bool operator!= (const MatrixND& m) const {
+        for (int i = 0; i < cols; ++i)
+            if (this->data[i] != m[i])
+                return true;
+        return false;
+    }
+
     // Arithmatic
     template<int rows_ = rows, int cols_ = cols, typename T_ = T, InstSetExt ISE_ = ISE>
-    PM_INLINE MatrixND operator+ (const MatrixND& m) {
+    PM_INLINE MatrixND operator+ (const MatrixND& m) const {
         return MatrixND([=](int c) { return this->data[c] + m[c]; });
     }
 
@@ -283,7 +300,7 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
     }
 
     template<int rows_ = rows, int cols_ = cols, typename T_ = T, InstSetExt ISE_ = ISE>
-    PM_INLINE MatrixND operator- (const MatrixND& m) {
+    PM_INLINE MatrixND operator- (const MatrixND& m) const {
         return MatrixND([=](int c) { return this->data[c] - m[c]; });
     }
 
@@ -336,10 +353,11 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
         }
     }
 
-    template<int cols_ = cols, int rrows, int rcols,
+    template<int rows_ = rows, int cols_ = cols, int rrows, int rcols,
         typename T_ = T, InstSetExt ISE_ = ISE,
-        typename std::enable_if_t<!MATRIX_SSE<cols_, T, ISE> || !MATRIX_SSE<rrows, T_, ISE_>, int> = 0>
-        PM_INLINE MatrixND<rows, rcols, T, ISE> operator* (const MatrixND<rrows, rcols, T_, ISE_>& m2)
+        typename std::enable_if_t<!MATRIX_SSE<cols_, T, ISE> || !MATRIX_SSE<rrows, T_, ISE_>, int> = 0,
+        typename std::enable_if_t<!IS_VECTOR<rows_, cols_> || !IS_VECTOR<rrows, rcols>, int> = 0>
+        PM_INLINE MatrixND<rows, rcols, T, ISE> operator* (const MatrixND<rrows, rcols, T_, ISE_>& m2) const
     {
         static_assert(cols_ == rrows, "The multiplication matrix have incompatible dimensions.");
         MatrixND<rows, rcols, T, ISE> ret;
@@ -347,15 +365,38 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
         return ret;
     }
 
+    template<int rows_ = rows, int cols_ = cols, int rrows, int rcols,
+        typename T_ = T, InstSetExt ISE_ = ISE,
+        typename std::enable_if_t<!MATRIX_SSE<cols_, T, ISE> || !MATRIX_SSE<rrows, T_, ISE_>, int> = 0,
+        typename std::enable_if_t<!IS_VECTOR<rows_, cols_> || !IS_VECTOR<rrows, rcols>, int> = 0>
+        PM_INLINE MatrixND<rows, rcols, T, ISE>& operator*= (const MatrixND<rrows, rcols, T_, ISE_>& m2)
+    {
+        static_assert(cols_ == rrows, "The multiplication matrix have incompatible dimensions.");
+        multiply(*this, m2, this);
+        return *this;
+    }
+
     template<int cols_ = cols, int rrows, int rcols,
         typename T_ = T, InstSetExt ISE_ = ISE,
-        typename std::enable_if_t<MATRIX_SSE<cols_, T, ISE> && MATRIX_SSE<rrows, T_, ISE_>, int> = 0>
-        PM_INLINE MatrixND<rows, rcols, T, ISE> operator* (const MatrixND<rrows, rcols, T_, ISE_>& m2)
+        typename std::enable_if_t<MATRIX_SSE<cols_, T, ISE> && MATRIX_SSE<rrows, T_, ISE_>, int> = 0,
+        typename std::enable_if_t<!IS_VECTOR<rows_, cols_> || !IS_VECTOR<rrows, rcols>, int> = 0>
+        PM_INLINE MatrixND<rows, rcols, T, ISE> operator* (const MatrixND<rrows, rcols, T_, ISE_>& m2) const
     {
         static_assert(cols_ == rrows, "The multiplication matrix have incompatible dimensions.");
         MatrixND<rows, rcols, T, ISE> ret;
         multiply_SSE(*this, m2, &ret);
         return ret;
+    }
+
+    template<int cols_ = cols, int rrows, int rcols,
+        typename T_ = T, InstSetExt ISE_ = ISE,
+        typename std::enable_if_t<MATRIX_SSE<cols_, T, ISE> && MATRIX_SSE<rrows, T_, ISE_>, int> = 0,
+        typename std::enable_if_t<!IS_VECTOR<rows_, cols_> || !IS_VECTOR<rrows, rcols>, int> = 0>
+        PM_INLINE MatrixND<rows, rcols, T, ISE>& operator*= (const MatrixND<rrows, rcols, T_, ISE_>& m2)
+    {
+        static_assert(cols_ == rrows, "The multiplication matrix have incompatible dimensions.");
+        multiply_SSE(*this, m2, this);
+        return *this;
     }
 
     // A really special function used for speed up transformation, directly transform a vector3 by a 4x4 matrix
@@ -391,21 +432,59 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
     }
 
     // ================================================================================
+    // Multiplication between two vectors.
+    // Element-wise
+    // ================================================================================
+private:
+    template<int rows_ = rows, int cols_ = cols, int rrows, int rcols, typename T_ = T,
+                InstSetExt ISE_ = ISE>
+    void elementwise_multiply(const MatrixND<rows_, cols_, T_, ISE_> &v1,
+                                const MatrixND<rrows, rcols, T_, ISE_> &v2,
+                                MatrixND<rows_, cols_, T_, ISE_> *ret) {
+        static_assert(rows_ == rrows && cols_ == rcols);
+        if (!ret)
+            return;
+        for (int i = 0; i < rows_; ++i) {
+            for (int j = 0; j < cols_; ++j) {
+                ret(i, j) = v1(i, j) * v2(i, j);
+            }
+        }
+    }
+
+public:
+    template<int rows_ = rows, int cols_ = cols,
+        typename std::enable_if_t<IS_VECTOR<rows_, cols_>, int> = 0>
+        MatrixND operator* (const MatrixND<rows, cols, T, ISE>& v2) const {
+        MatrixND ret;
+        for (int i = 0; i < cols; ++i)
+            ret.data[i] = this->data[i] * v2.data[i];
+        return ret;
+    }
+
+    template<int rows_ = rows, int cols_ = cols,
+        typename std::enable_if_t<IS_VECTOR<rows_, cols_>, int> = 0>
+        MatrixND& operator*= (const MatrixND<rows, cols, T, ISE>& v2) {
+        for (int i = 0; i < cols; ++i)
+            this->data[i] = this->data[i] * v2.data[i];
+        return *this;
+    }
+
+    // ================================================================================
     // Scalar
     // ================================================================================
-    PM_INLINE MatrixND operator+ (const T scalar) {
+    PM_INLINE MatrixND operator+ (const T scalar) const {
         return MatrixND([=](int c) { return this->data[c] + scalar; });
     }
 
-    PM_INLINE MatrixND operator- (const T scalar) {
+    PM_INLINE MatrixND operator- (const T scalar) const {
         return MatrixND([=](int c) { return this->data[c] - scalar; });
     }
 
-    PM_INLINE MatrixND operator* (const T scalar) {
+    PM_INLINE MatrixND operator* (const T scalar) const {
         return MatrixND([=](int c) { return this->data[c] * scalar; });
     }
 
-    PM_INLINE MatrixND operator/ (const T scalar) {
+    PM_INLINE MatrixND operator/ (const T scalar) const {
         return MatrixND([=](int c) { return this->data[c] / scalar; });
     }
 
@@ -468,6 +547,14 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
         else
             return (*this) / len;
 	}
+
+    // NaNs check
+    bool hasNaNs() const {
+        bool n = false;
+        for (int i = 0; i < cols; ++i)
+            n = n || this->data[cols].hasNaNs();
+        return n;
+    }
 };
 
 // IO for matrix

@@ -157,7 +157,7 @@ struct ArrayND : public ArrayBase<dim, T, ISE>
         for (int i = 0; i < dim; ++i)
             this->data[i] = T();
     }
-    ArrayND(T val) { 
+    explicit ArrayND(T val) { 
         for (int i = 0; i < dim; ++i)
             this->data[i] = val; 
     }
@@ -275,6 +275,10 @@ struct ArrayND : public ArrayBase<dim, T, ISE>
         return true;
     }
 
+    PM_INLINE bool operator!=(const ArrayND& v2) const {
+        return !((*this) == v2);
+    }
+
     // SIMD ones
     template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE,
         typename std::enable_if_t<SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
@@ -374,6 +378,14 @@ struct ArrayND : public ArrayBase<dim, T, ISE>
         for (int i = 0; i < dim; ++i)
             ret += this->data[i] * v2[i];
         return ret;
+    }
+
+    // NaNs
+    bool hasNaNs() const {
+        bool n = false;
+        for (int i = 0; i < dim; ++i)
+            n = n || std::isnan(this->data[i]);
+        return n;
     }
 };
 
