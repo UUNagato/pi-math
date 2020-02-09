@@ -5,20 +5,29 @@
 #include "basic/datatype.h"
 #include "basic/array.h"
 #include "basic/matrix.h"
+#include "basic/quaternion.h"
 #include "basic/funcs.h"
 
-NAMESPACE_PIMATH_BEGIN
+#define PIMATH_USE_NAMESPACE using namespace PIMATH_NAMESPACE_NAME;
+
+PIMATH_NAMESPACE_BEGIN
 
 using Vector2f = MatrixND<2, 1, float32>;
 using Vector2d = MatrixND<2, 1, float64>;
+using Vector2i = MatrixND<2, 1, int32>;
+using Vector2u = MatrixND<2, 1, uint32>;
 using Vector2 = MatrixND<2, 1, real>;
 template<typename T> using Vector2t = MatrixND<2, 1, T>;
 using Vector3f = MatrixND<3, 1, float32>;
 using Vector3d = MatrixND<3, 1, float64>;
+using Vector3i = MatrixND<3, 1, int32>;
+using Vector3u = MatrixND<3, 1, uint32>;
 using Vector3 = MatrixND<3, 1, real>;
 template<typename T> using Vector3t = MatrixND<3, 1, T>;
 using Vector4f = MatrixND<4, 1, float32>;
 using Vector4d = MatrixND<4, 1, float64>;
+using Vector4i = MatrixND<4, 1, int32>;
+using Vector4u = MatrixND<4, 1, uint32>;
 using Vector4 = MatrixND<4, 1, real>;
 template<typename T> using Vector4t = MatrixND<4, 1, T>;
 
@@ -43,4 +52,4 @@ static constexpr real RMax = std::numeric_limits<real>::max();
 static constexpr real RLowest = std::numeric_limits<real>::lowest();
 
 
-NAMESPACE_PIMATH_END
+PIMATH_NAMESPACE_END

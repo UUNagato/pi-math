@@ -6,7 +6,7 @@
 #include "utils.h"
 #include "../pimath.h"
 
-NAMESPACE_PIMATH_BEGIN
+PIMATH_NAMESPACE_BEGIN
 
 /// clamp
 /// Input: data a, minimum tmin, maximum tmax
@@ -33,4 +33,4 @@ T lerp(const T& a, const T& b, real t)
 	return (1 - t) * a + t * b;
 }
 
-NAMESPACE_PIMATH_END
+PIMATH_NAMESPACE_END

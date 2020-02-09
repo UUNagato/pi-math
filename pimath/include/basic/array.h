@@ -11,7 +11,7 @@
 #include "utils.h"
 #include "datatype.h"
 
-NAMESPACE_PIMATH_BEGIN
+PIMATH_NAMESPACE_BEGIN
 
 // For N dimensional vector
 template<int dim, typename T, InstSetExt ISE = default_instruction_set, typename Enable = void>
@@ -314,7 +314,7 @@ struct ArrayND : public ArrayBase<dim, T, ISE>
 	// ========================================================================
 	// scalar arithmetic
 	// ========================================================================
-	PM_INLINE ArrayND operator+(const T scalar) {
+	PM_INLINE ArrayND operator+(const T scalar) const {
 		if (dim > 4)
 			return ArrayND([=](int i) { return this->data[i] + scalar; });
 		else
@@ -329,7 +329,7 @@ struct ArrayND : public ArrayBase<dim, T, ISE>
 		return (*this);
 	}
 
-	PM_INLINE ArrayND operator-(const T scalar) {
+	PM_INLINE ArrayND operator-(const T scalar) const {
 		if (dim > 4)
 			return ArrayND([=](int i) { return this->data[i] - scalar; });
 		else
@@ -343,7 +343,7 @@ struct ArrayND : public ArrayBase<dim, T, ISE>
 			*this = (*this) - ArrayND(scalar);
 		return (*this);
 	}
-	PM_INLINE ArrayND operator*(const T scalar) {
+	PM_INLINE ArrayND operator*(const T scalar) const {
 		if (dim > 4)
 			return ArrayND([=](int i) { return this->data[i] * scalar; });
 		else
@@ -357,7 +357,7 @@ struct ArrayND : public ArrayBase<dim, T, ISE>
 			*this = (*this) * ArrayND(scalar);
 		return (*this);
 	}
-	PM_INLINE ArrayND operator/(const T scalar) {
+	PM_INLINE ArrayND operator/(const T scalar) const {
 		if (dim > 4)
 			return ArrayND([=](int i) { return this->data[i] / scalar; });
 		else
@@ -371,6 +371,19 @@ struct ArrayND : public ArrayBase<dim, T, ISE>
 			*this = (*this) / ArrayND(scalar);
 		return (*this);
 	}
+
+    // Sqrt
+    template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE,
+        typename std::enable_if_t<!SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
+    static ArrayND sqrt(const ArrayND &a) {
+        return ArrayND([=](int i) { return std::sqrt(a.data[i]); });
+    }
+
+    template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE,
+        typename std::enable_if_t<SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
+    static ArrayND sqrt(const ArrayND &a) {
+        return ArrayND(_mm_sqrt_ps(a.v));
+    }
 
     // some other vector operators
     T dot(const ArrayND &v2) const {
@@ -400,4 +413,4 @@ const std::ostream& operator<<(std::ostream &os, const ArrayND<dim, T, ISE>&v)
     return os;
 }
 
-NAMESPACE_PIMATH_END
+PIMATH_NAMESPACE_END

@@ -19,10 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\advanced\pcgrng.h" />
     <ClInclude Include="include\advanced\transform.h" />
     <ClInclude Include="include\basic\datatype.h" />
     <ClInclude Include="include\basic\funcs.h" />
     <ClInclude Include="include\basic\matrix.h" />
+    <ClInclude Include="include\basic\quaternion.h" />
     <ClInclude Include="include\basic\utils.h" />
     <ClInclude Include="include\basic\array.h" />
     <ClInclude Include="include\pimath.h" />

@@ -10,7 +10,7 @@
 #include "datatype.h"
 #include "array.h"
 
-NAMESPACE_PIMATH_BEGIN
+PIMATH_NAMESPACE_BEGIN
 
 template<int rows, int cols, typename T, InstSetExt ISE>
 struct MatrixBase
@@ -246,7 +246,7 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
 
     template<int rows_ = rows, int cols_ = cols,
         typename std::enable_if_t<IS_VECTOR<rows_, cols_>, int> = 0>
-        PM_INLINE const T& operator[] (size_t index) {
+        PM_INLINE const T& operator[] (size_t index) const {
         if (cols_ == 1)
             return this->data[0][index];
         else
@@ -274,14 +274,14 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
 
     PM_INLINE bool operator== (const MatrixND& m) const {
         for (int i = 0; i < cols; ++i)
-            if (!(this->data[i] == m[i]))
+            if (!(this->data[i] == m.data[i]))
                 return false;
         return true;
     }
 
     PM_INLINE bool operator!= (const MatrixND& m) const {
         for (int i = 0; i < cols; ++i)
-            if (this->data[i] != m[i])
+            if (this->data[i] != m.data[i])
                 return true;
         return false;
     }
@@ -289,25 +289,25 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
     // Arithmatic
     template<int rows_ = rows, int cols_ = cols, typename T_ = T, InstSetExt ISE_ = ISE>
     PM_INLINE MatrixND operator+ (const MatrixND& m) const {
-        return MatrixND([=](int c) { return this->data[c] + m[c]; });
+        return MatrixND([=](int c) { return this->data[c] + m.data[c]; });
     }
 
     template<int rows_ = rows, int cols_ = cols, typename T_ = T, InstSetExt ISE_ = ISE>
     PM_INLINE MatrixND& operator+= (const MatrixND& m) {
         for (int c = 0; c < cols; ++c)
-            this->data[c] = this->data[c] + m[c];
+            this->data[c] = this->data[c] + m.data[c];
         return *this;
     }
 
     template<int rows_ = rows, int cols_ = cols, typename T_ = T, InstSetExt ISE_ = ISE>
     PM_INLINE MatrixND operator- (const MatrixND& m) const {
-        return MatrixND([=](int c) { return this->data[c] - m[c]; });
+        return MatrixND([=](int c) { return this->data[c] - m.data[c]; });
     }
 
     template<int rows_ = rows, int cols_ = cols, typename T_ = T, InstSetExt ISE_ = ISE>
     PM_INLINE MatrixND& operator-= (const MatrixND& m) {
         for (int c = 0; c < cols; ++c)
-            this->data[c] = this->data[c] - m[c];
+            this->data[c] = this->data[c] - m.data[c];
         return *this;
     }
 
@@ -527,7 +527,7 @@ public:
 	// ===============================================================================
 	// Operations for vectors
 	// ===============================================================================
-	PM_INLINE T length2() {
+	PM_INLINE T length2() const {
 		T total_sqr = T(0);
 		for (int c = 0; c < cols; ++c)
 			for (int r = 0; r < rows; ++r)
@@ -535,18 +535,42 @@ public:
 		return total_sqr;
 	}
 
-	PM_INLINE T length() {
+	PM_INLINE T length() const {
 		T sqrLen = length2();
 		return sqrt(sqrLen);
 	}
 
-	PM_INLINE MatrixND normalize() {
+	PM_INLINE MatrixND normalize() const {
         T len = length();
-        if (len <= 0.00001f && len >= -0.00001f)
+        if (len == T(0))
             return MatrixND(T(0));
         else
             return (*this) / len;
 	}
+
+    PM_INLINE MatrixND& normalizeInPlace() {
+        T len = length();
+        if (len != T(0))
+            (*this) /= len;
+        return *this;
+    }
+
+    friend PM_INLINE MatrixND normalize(const MatrixND& v) {
+        return v.normalize();
+    }
+
+    // Dot
+    PM_INLINE T dot(const MatrixND& q) const {
+        T sum = T(0);
+        for (int i = 0; i < cols; ++i) {
+            sum = sum + this->data[i].dot(q.data[i]);
+        }
+        return sum;
+    }
+
+    friend PM_INLINE T dot(const MatrixND& m1, const MatrixND& m2) {
+        return m1.dot(m2);
+    }
 
     // NaNs check
     bool hasNaNs() const {
@@ -579,6 +603,20 @@ std::ostream& operator<<(std::ostream &os, const MatrixND<rows, cols, T, ISE>&v)
 //======================================================================
 // Operators for Matrices
 //======================================================================
+
+//======================================================================
+// Cross
+//======================================================================
+template<int rows, int cols, int rows_, int cols_, typename T, InstSetExt ISE, InstSetExt ISE_>
+MatrixND<rows, cols, T, ISE> cross(const MatrixND<rows, cols, T, ISE>& v1, const MatrixND<rows_, cols_, T, ISE_>& v2) {
+    static_assert((rows == 3 && cols == 1) || (rows == 1 && cols == 3), "cross product only works for 3 dimension vectors");
+    static_assert((rows_ == 3 && cols_ == 1) || (rows_ == 1 && cols_ == 3), "cross product only works for 3 dimension vectors");
+    MatrixND<3, 1, T, ISE> ret;
+    ret.x = v1.y * v2.z - v1.z * v2.y;
+    ret.y = v1.z * v2.x - v1.x * v2.z;
+    ret.z = v1.x * v2.y - v1.y * v2.x;
+    return ret;
+}
 
 //======================================================================
 // Determinant
@@ -811,4 +849,4 @@ MatrixND<4, 4, T, ISE> inversed(const MatrixND<4, 4, T, ISE>& m) {
     return Inverse * OneOverDeterminant;
 }
 
-NAMESPACE_PIMATH_END
+PIMATH_NAMESPACE_END

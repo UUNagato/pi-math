@@ -1,11 +1,23 @@
 #pragma once
 #include "utils.h"
 
-NAMESPACE_PIMATH_BEGIN
+PIMATH_NAMESPACE_BEGIN
 
 // BASIC TYPES
-typedef float float32;
-typedef double float64;
+using float32 = float;
+using float64 = double;
+
+#if defined(_MSC_VER)
+using int64 = __int64;
+using int32 = __int32;
+using uint64 = unsigned __int64;
+using uint32 = unsigned __int32;
+#else
+using int64 = long long;
+using int32 = long;
+using uint64 = unsigned long long;
+using uint32 = unsigned long;
+#endif
 
 #ifdef PIMATH_64BIT
 using real = double;
@@ -22,4 +34,4 @@ real constexpr operator"" _f(unsigned long long v) {
     return real(v);
 }
 
-NAMESPACE_PIMATH_END
+PIMATH_NAMESPACE_END

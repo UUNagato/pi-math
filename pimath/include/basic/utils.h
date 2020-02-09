@@ -1,13 +1,13 @@
 #pragma once
-#define NAMESPACE_PIMATH Pimath
+#define PIMATH_NAMESPACE_NAME Pimath
 
-#define NAMESPACE_PIMATH_BEGIN namespace Pimath {
-#define NAMESPACE_PIMATH_END }
+#define PIMATH_NAMESPACE_BEGIN namespace Pimath {
+#define PIMATH_NAMESPACE_END }
 
 // used for compile bits
 #define PIMATH_32BIT
 
-NAMESPACE_PIMATH_BEGIN
+PIMATH_NAMESPACE_BEGIN
 // Instruction Set Extension, learnt from Taichi (https://github.com/yuanming-hu/taichi)
 enum class InstSetExt { None, SSE, AVX, AVX2 };
 
@@ -39,4 +39,4 @@ constexpr InstSetExt default_instruction_set = InstSetExt::None;
 #define PM_ALIGNED(x) __attribute__((aligned(x)))
 #endif
 
-NAMESPACE_PIMATH_END
+PIMATH_NAMESPACE_END

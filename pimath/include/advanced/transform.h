@@ -2,7 +2,7 @@
 #include "../basic/utils.h"
 #include "../pimath.h"
 
-NAMESPACE_PIMATH_BEGIN
+PIMATH_NAMESPACE_BEGIN
 
 // Transform Class, a tool class for transformations.
 
@@ -49,4 +49,4 @@ private:
 	Matrix4x4 inv_m;
 };
 
-NAMESPACE_PIMATH_END
+PIMATH_NAMESPACE_END
