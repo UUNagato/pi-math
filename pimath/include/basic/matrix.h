@@ -235,7 +235,7 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
         if (cols_ == 1)
             return this->data[0][index];
         else
-            return this->data[index];
+            return this->data[index][0];
     }
 
     template<int rows_ = rows, int cols_ = cols,
@@ -250,7 +250,7 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
         if (cols_ == 1)
             return this->data[0][index];
         else
-            return this->data[index];
+            return this->data[index][0];
     }
 
     template<int rows_ = rows, int cols_ = cols,
@@ -399,33 +399,45 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
         return *this;
     }
 
+    PM_INLINE MatrixND operator-()
+    {
+        return MatrixND([=](int i) { return -this->data[i]; });
+    }
+
     // A really special function used for speed up transformation, directly transform a vector3 by a 4x4 matrix
+    template<typename T_ = T, InstSetExt ISE_ = ISE,
+            typename std::enable_if_t<MATRIX_SSE<4, T_, ISE_> && MATRIX_SSE<3, T_, ISE_>, int> = 0>
     PM_INLINE MatrixND<3, 1, T, ISE> applyTransform(const MatrixND<3, 1, T, ISE>& m2)
     {
         static_assert(rows == 4 && cols == 4, "applyTransform can only be used for 4x4 matrix times 3-length colume vector");
         MatrixND<3, 1, T, ISE> ret;
-        if (MATRIX_SSE<4, T, ISE>&& MATRIX_SSE<3, T, ISE>) {
-            // pack first matrix rows into four __m128
-            float r[3][4] = { 0 };
-            for (int i = 0; i < 3; ++i)
-                for (int j = 0; j < 4; ++j)
-                    r[i][j] = (*this)(i, j);
-            __m128 rr[3];
-            rr[0] = _mm_load_ps(r[0]);
-            rr[1] = _mm_load_ps(r[1]);
-            rr[2] = _mm_load_ps(r[2]);
+        // pack first matrix rows into four __m128
+        float r[3][4] = { 0 };
+        for (int i = 0; i < 3; ++i)
+            for (int j = 0; j < 4; ++j)
+                r[i][j] = (*this)(i, j);
+        __m128 rr[3];
+        rr[0] = _mm_load_ps(r[0]);
+        rr[1] = _mm_load_ps(r[1]);
+        rr[2] = _mm_load_ps(r[2]);
 
-            for (int r = 0; r < 3; ++r) {
-                _mm_store_ss(&ret(r, 0), _mm_dp_ps(rr[r], m2.data[0].v, 0xf1));
-            }
+        for (int r = 0; r < 3; ++r) {
+            _mm_store_ss(&ret(r, 0), _mm_dp_ps(rr[r], m2.data[0].v, 0xf1));
         }
-        else {
-            for (int r = 0; r < 3; ++r) {
-                T v = T(0);
-                for (int c = 0; c < 3; ++c)
-                    v = v + (*this)(r, c) * m2(c, 0);
-                ret(r, 0) = v;
-            }
+        return ret;
+    }
+
+    template<typename T_ = T, InstSetExt ISE_ = ISE,
+        typename std::enable_if_t<!(MATRIX_SSE<4, T_, ISE_> && MATRIX_SSE<3, T_, ISE_>), int> = 0>
+        PM_INLINE MatrixND<3, 1, T, ISE> applyTransform(const MatrixND<3, 1, T, ISE>& m2)
+    {
+        static_assert(rows == 4 && cols == 4, "applyTransform can only be used for 4x4 matrix times 3-length colume vector");
+        MatrixND<3, 1, T, ISE> ret;
+        for (int r = 0; r < 3; ++r) {
+            T v = T(0);
+            for (int c = 0; c < 3; ++c)
+                v = v + (*this)(r, c) * m2(c, 0);
+            ret(r, 0) = v;
         }
 
         return ret;
@@ -484,6 +496,10 @@ public:
         return MatrixND([=](int c) { return this->data[c] * scalar; });
     }
 
+    friend PM_INLINE MatrixND operator* (const T scalar, const MatrixND& m) {
+        return MatrixND([=](int c) { return m.data[c] * scalar; });
+    }
+
     PM_INLINE MatrixND operator/ (const T scalar) const {
         return MatrixND([=](int c) { return this->data[c] / scalar; });
     }
@@ -515,8 +531,12 @@ public:
     // ===============================================================================
     // Operations for matrices
     // ===============================================================================
-    PM_INLINE MatrixND<cols, rows, T, ISE> transpose() {
+    PM_INLINE MatrixND<cols, rows, T, ISE> transpose() const {
         return MatrixND<cols, rows, T, ISE>([=](int r, int c) { return (*this)(c, r); });
+    }
+
+    friend PM_INLINE MatrixND transpose(const MatrixND& m) {
+        return m.transpose();
     }
 
     PM_INLINE T determinant() {
@@ -741,7 +761,7 @@ T determinant(const MatrixND<4, 4, T, ISE>& m) {
 }
 
 template <typename T, InstSetExt ISE>
-MatrixND<4, 4, T, ISE> inversed(const MatrixND<4, 4, T, ISE>& m) {
+MatrixND<4, 4, T, ISE> inverse(const MatrixND<4, 4, T, ISE>& m) {
     // This function is copied from GLM
     /*
     ================================================================================

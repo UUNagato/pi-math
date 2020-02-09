@@ -20,6 +20,40 @@ public:
 
 	QuaternionBase(const QuaternionBase& q) : v(q.v), w(q.w) {}
 
+	template<InstSetExt ISE_ = ISE>
+	QuaternionBase(const MatrixND<4, 4, real, ISE_>& m) {
+		real trace = m(0, 0) + m(1, 1) + m(2, 2);
+		if (trace > 0_f) {
+			// Compute w from matrix trace, then xyz
+			// 4w^2 = m[0][0] + m[1][1] + m[2][2] + m[3][3] (but m[3][3] == 1)
+			real s = std::sqrt(trace + 1_f);
+			w = s / 2_f;
+			s = 0.5_f / s;
+			v.x = (m(2, 1) - m(1, 2)) * s;
+			v.y = (m(0, 2) - m(2, 0)) * s;
+			v.z = (m(1, 0) - m(0, 1)) * s;
+		}
+		else {
+			// Compute largest of $x$, $y$, or $z$, then remaining components
+			const int nxt[3] = { 1, 2, 0 };
+			real q[3];
+			int i = 0;
+			if (m(1, 1) > m(0, 0)) i = 1;
+			if (m(2, 2) > m(i, i)) i = 2;
+			int j = nxt[i];
+			int k = nxt[j];
+			real s = std::sqrt((m(i, i) - (m(j, j) + m(k, k))) + 1_f);
+			q[i] = s * 0.5_f;
+			if (s != 0_f) s = 0.5_f / s;
+			w = (m(k, j) - m(j, k)) * s;
+			q[j] = (m(j, i) + m(i, j)) * s;
+			q[k] = (m(k, i) + m(i, k)) * s;
+			v.x = q[0];
+			v.y = q[1];
+			v.z = q[2];
+		}
+	}
+
 	//=============================================================
 	// Operators - copy and logic
 	//=============================================================
@@ -35,6 +69,10 @@ public:
 
 	PM_INLINE bool operator!= (const QuaternionBase& q) const {
 		return !(this->operator==(q));
+	}
+
+	QuaternionBase operator-() const {
+		return QuaternionBase(-v, -w);
 	}
 
 	//=============================================================
@@ -118,7 +156,7 @@ public:
 		return q1 * std::cos(thetap) + qperp * std::sin(thetap);
 	}
 
-	MatrixND<3, 3, real, ISE> toMatrix() const {
+	MatrixND<3, 3, real, ISE> toMatrix3x3() const {
 		MatrixND<3, 3, real, ISE> mat;
 		real xy = v.x * v.y, yz = v.y * v.z, xz = v.x * v.z;
 		RealPart v2 = v * v;
@@ -132,7 +170,30 @@ public:
 		mat(2, 0) = 2_f * (xz + vw.y);
 		mat(2, 1) = 2_f * (yz - vw.x);
 		mat(2, 2) = 1_f - 2_f * (v2.x + v2.y);
-		return mat;
+		return transpose(mat);		// use left handed
+	}
+
+	MatrixND<4, 4, real, ISE> toMatrix4x4() const {
+		MatrixND<4, 4, real, ISE> mat;
+		real xy = v.x * v.y, yz = v.y * v.z, xz = v.x * v.z;
+		RealPart v2 = v * v;
+		RealPart vw = v * w;
+		mat(0, 0) = 1_f - 2_f * (v2.y + v2.z);
+		mat(0, 1) = 2_f * (xy + vw.z);
+		mat(0, 2) = 2_f * (xz - vw.y);
+		mat(1, 0) = 2_f * (xy - vw.z);
+		mat(1, 1) = 1_f - 2_f * (v2.x + v2.z);
+		mat(1, 2) = 2_f * (yz + vw.x);
+		mat(2, 0) = 2_f * (xz + vw.y);
+		mat(2, 1) = 2_f * (yz - vw.x);
+		mat(2, 2) = 1_f - 2_f * (v2.x + v2.y);
+		mat(3, 3) = 1_f;
+		return transpose(mat);		// use left handed
+	}
+
+	friend std::ostream& operator<<(std::ostream& os, const QuaternionBase& q) {
+		os << '[' << q.v.x << ',' << q.v.y << ',' << q.v.z << ',' << q.w << ']';
+		return os;
 	}
 
 public:

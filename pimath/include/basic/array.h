@@ -311,6 +311,18 @@ struct ArrayND : public ArrayBase<dim, T, ISE>
         return *this;
     }
 
+    template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE,
+        typename std::enable_if_t<!SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
+        PM_INLINE ArrayND operator-() {
+        return ArrayND([=](int i) { return -(this->data[i]); });
+    }
+
+    template<int dim_ = dim, typename T_ = T, InstSetExt ISE_ = ISE,
+        typename std::enable_if_t<SIMD_FLAG<dim_, T_, ISE_>, int> = 0>
+        PM_INLINE ArrayND operator-() {
+        return ArrayND(_mm_xor_ps(this->v, _mm_set1_ps(-0.0)));
+    }
+
 	// ========================================================================
 	// scalar arithmetic
 	// ========================================================================
