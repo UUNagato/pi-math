@@ -71,7 +71,7 @@ public:
 		return !(this->operator==(q));
 	}
 
-	QuaternionBase operator-() const {
+	QuaternionBase operator-() {
 		return QuaternionBase(-v, -w);
 	}
 
@@ -145,7 +145,7 @@ public:
 		return q.normalize();
 	}
 
-	QuaternionBase slerp(real t, const QuaternionBase& q1, const QuaternionBase& q2) {
+	friend QuaternionBase slerp(const QuaternionBase& q1, const QuaternionBase& q2, real t) {
 		real cosTheta = q1.dot(q2);
 		if (cosTheta > .9995_f)
 			return normalize(((1_f - t) * q1 + t * q2));

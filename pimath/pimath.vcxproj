@@ -24,6 +24,7 @@
     <ClInclude Include="include\basic\datatype.h" />
     <ClInclude Include="include\basic\funcs.h" />
     <ClInclude Include="include\basic\matrix.h" />
+    <ClInclude Include="include\basic\matrix_transform.h" />
     <ClInclude Include="include\basic\quaternion.h" />
     <ClInclude Include="include\basic\utils.h" />
     <ClInclude Include="include\basic\array.h" />

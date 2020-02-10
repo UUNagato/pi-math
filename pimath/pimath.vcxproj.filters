@@ -48,6 +48,9 @@
     <ClInclude Include="include\advanced\pcgrng.h">
       <Filter>头文件\advanved</Filter>
     </ClInclude>
+    <ClInclude Include="include\basic\matrix_transform.h">
+      <Filter>头文件\basic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tester.cpp">
