@@ -36,9 +36,6 @@
     <ClInclude Include="include\basic\matrix.h">
       <Filter>头文件\basic</Filter>
     </ClInclude>
-    <ClInclude Include="include\advanced\transform.h">
-      <Filter>头文件\advanved</Filter>
-    </ClInclude>
     <ClInclude Include="include\basic\funcs.h">
       <Filter>头文件\basic</Filter>
     </ClInclude>
@@ -50,6 +47,9 @@
     </ClInclude>
     <ClInclude Include="include\basic\matrix_transform.h">
       <Filter>头文件\basic</Filter>
+    </ClInclude>
+    <ClInclude Include="include\advanced\mat_special.h">
+      <Filter>头文件\advanved</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

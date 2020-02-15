@@ -5,6 +5,7 @@
 
 #include "utils.h"
 #include "matrix.h"
+#include "funcs.h"
 
 PIMATH_NAMESPACE_BEGIN
 
@@ -102,6 +103,10 @@ public:
 		return QuaternionBase(v * s, w * s);
 	}
 
+	friend PM_INLINE QuaternionBase operator* (const real s, const QuaternionBase &q) {
+		return QuaternionBase(q.v * s, q.w * s);
+	}
+
 	PM_INLINE QuaternionBase operator*= (const real s) {
 		v = v * s;	w = w * s;
 		return *this;
@@ -148,11 +153,11 @@ public:
 	friend QuaternionBase slerp(const QuaternionBase& q1, const QuaternionBase& q2, real t) {
 		real cosTheta = q1.dot(q2);
 		if (cosTheta > .9995_f)
-			return normalize(((1_f - t) * q1 + t * q2));
+			return ((1_f - t) * q1 + t * q2).normalize();
 
 		real theta = std::acos(clamp(cosTheta, -1_f, 1_f));
 		real thetap = theta * t;
-		QuaternionBase qperp = normalize((q2 - q1 * cosTheta));
+		QuaternionBase qperp = (q2 - q1 * cosTheta).normalize();
 		return q1 * std::cos(thetap) + qperp * std::sin(thetap);
 	}
 

@@ -355,7 +355,7 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
 
     template<int lrows = rows, int lcols = cols, int rrows, int rcols,
             typename T_ = T, InstSetExt ISE_ = ISE,
-            typename std::enable_if_t<MATRIX_SSE<lcols, T, ISE> && MATRIX_SSE<rrows, T_, ISE_> &&
+            typename std::enable_if_t<(MATRIX_SSE<lcols, T, ISE> && MATRIX_SSE<rrows, T_, ISE_>) &&
                                     (!IS_VECTOR<lrows, lcols> || !IS_VECTOR<rrows, rcols>), int> = 0>
     PM_INLINE MatrixND<lrows, rcols, T, ISE> operator*(const MatrixND<rrows, rcols, T_, ISE_>& m2) const {
         static_assert(lcols == rrows, "The multiplication matrix have incompatible dimensions.");
@@ -366,7 +366,7 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
 
     template<int lrows = rows, int lcols = cols, int rrows, int rcols,
         typename T_ = T, InstSetExt ISE_ = ISE,
-        typename std::enable_if_t<MATRIX_SSE<lcols, T, ISE> && MATRIX_SSE<rrows, T_, ISE_> &&
+        typename std::enable_if_t<(MATRIX_SSE<lcols, T, ISE> && MATRIX_SSE<rrows, T_, ISE_>) &&
                                     (!IS_VECTOR<lrows, lcols> || !IS_VECTOR<rrows, rcols>), int> = 0>
         PM_INLINE MatrixND<lrows, rcols, T, ISE>& operator*=(const MatrixND<rrows, rcols, T_, ISE_>& m2) {
         static_assert(lcols == rrows, "The multiplication matrix have incompatible dimensions.");
@@ -376,7 +376,7 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
 
     template<int lrows = rows, int lcols = cols, int rrows, int rcols,
                 typename T_ = T, InstSetExt ISE_ = ISE,
-                typename std::enable_if_t<!MATRIX_SSE<lcols, T, ISE> || !MATRIX_SSE<rrows, T_, ISE_> &&
+                typename std::enable_if_t<(!MATRIX_SSE<lcols, T, ISE> || !MATRIX_SSE<rrows, T_, ISE_>) &&
                         (!IS_VECTOR<lrows, lcols> || !IS_VECTOR<rrows, rcols>), int> = 0>
         PM_INLINE MatrixND<lrows, rcols, T, ISE> operator*(const MatrixND<rrows, rcols, T_, ISE_>& m2) const {
         static_assert(lcols == rrows, "The multiplication matrix have incompatible dimensions.");
@@ -387,7 +387,7 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
 
     template<int lrows = rows, int lcols = cols, int rrows, int rcols,
                 typename T_ = T, InstSetExt ISE_ = ISE,
-                typename std::enable_if_t<!MATRIX_SSE<lcols, T, ISE> || !MATRIX_SSE<rrows, T_, ISE_> &&
+                typename std::enable_if_t<(!MATRIX_SSE<lcols, T, ISE> || !MATRIX_SSE<rrows, T_, ISE_>) &&
                         (!IS_VECTOR<lrows, lcols> || !IS_VECTOR<rrows, rcols>), int> = 0>
         PM_INLINE MatrixND<lrows, rcols, T, ISE>& operator*=(const MatrixND<rrows, rcols, T_, ISE_>& m2) {
         static_assert(lcols == rrows, "The multiplication matrix have incompatible dimensions.");
@@ -398,45 +398,6 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
     PM_INLINE MatrixND operator-()
     {
         return MatrixND([=](int i) { return -this->data[i]; });
-    }
-
-    // A really special function used for speed up transformation, directly transform a vector3 by a 4x4 matrix
-    template<typename T_ = T, InstSetExt ISE_ = ISE,
-            typename std::enable_if_t<MATRIX_SSE<4, T_, ISE_> && MATRIX_SSE<3, T_, ISE_>, int> = 0>
-    PM_INLINE MatrixND<3, 1, T, ISE> applyTransform(const MatrixND<3, 1, T, ISE>& m2)
-    {
-        static_assert(rows == 4 && cols == 4, "applyTransform can only be used for 4x4 matrix times 3-length colume vector");
-        MatrixND<3, 1, T, ISE> ret;
-        // pack first matrix rows into four __m128
-        float r[3][4] = { 0 };
-        for (int i = 0; i < 3; ++i)
-            for (int j = 0; j < 4; ++j)
-                r[i][j] = (*this)(i, j);
-        __m128 rr[3];
-        rr[0] = _mm_load_ps(r[0]);
-        rr[1] = _mm_load_ps(r[1]);
-        rr[2] = _mm_load_ps(r[2]);
-
-        for (int r = 0; r < 3; ++r) {
-            _mm_store_ss(&ret(r, 0), _mm_dp_ps(rr[r], m2.data[0].v, 0xf1));
-        }
-        return ret;
-    }
-
-    template<typename T_ = T, InstSetExt ISE_ = ISE,
-        typename std::enable_if_t<!(MATRIX_SSE<4, T_, ISE_> && MATRIX_SSE<3, T_, ISE_>), int> = 0>
-        PM_INLINE MatrixND<3, 1, T, ISE> applyTransform(const MatrixND<3, 1, T, ISE>& m2)
-    {
-        static_assert(rows == 4 && cols == 4, "applyTransform can only be used for 4x4 matrix times 3-length colume vector");
-        MatrixND<3, 1, T, ISE> ret;
-        for (int r = 0; r < 3; ++r) {
-            T v = T(0);
-            for (int c = 0; c < 3; ++c)
-                v = v + (*this)(r, c) * m2(c, 0);
-            ret(r, 0) = v;
-        }
-
-        return ret;
     }
 
     // ================================================================================
@@ -491,10 +452,10 @@ public:
     PM_INLINE MatrixND operator* (const T scalar) const {
         return MatrixND([=](int c) { return this->data[c] * scalar; });
     }
-    /*
+    
     friend PM_INLINE MatrixND operator* (const T scalar, const MatrixND& m) {
         return MatrixND([=](int c) { return m.data[c] * scalar; });
-    }*/
+    }
 
     PM_INLINE MatrixND operator/ (const T scalar) const {
         return MatrixND([=](int c) { return this->data[c] / scalar; });

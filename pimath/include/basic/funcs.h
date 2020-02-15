@@ -1,10 +1,9 @@
+#pragma once
 // =============================================================
 // PI-MATH Mathematics Functions
 // Some useful functions
 // =============================================================
-#pragma once
 #include "utils.h"
-#include "../pimath.h"
 
 PIMATH_NAMESPACE_BEGIN
 
@@ -40,7 +39,7 @@ MatrixND<rows, cols, T, ISE> floor(const MatrixND<rows, cols, T, ISE>& m)
 	MatrixND<rows, cols, T, ISE> ret;
 	for (int c = 0; c < cols; ++c)
 		for (int r = 0; r < rows; ++r)
-			ret[c][r] = std::floor(m[c][r]);
+			ret(r, c) = std::floor(m(r, c));
 	return ret;
 }
 
@@ -51,7 +50,7 @@ MatrixND<rows, cols, T, ISE> ceil(const MatrixND<rows, cols, T, ISE>& m)
 	MatrixND<rows, cols, T, ISE> ret;
 	for (int c = 0; c < cols; ++c)
 		for (int r = 0; r < rows; ++r)
-			ret[c][r] = std::ceil(m[c][r]);
+			ret(r, c) = std::ceil(m(r, c));
 	return ret;
 }
 
@@ -101,16 +100,18 @@ MatrixND<rows, cols, T, ISE> min(const MatrixND<rows, cols, T, ISE>& m1,
 
 /// Radians
 /// convert degrees to radians
-real radians(real degrees)
+template<typename T>
+T radians(T degrees)
 {
-	return (degrees / 180_f) * PI;
+	return (degrees / T(180)) * PI;
 }
 
 /// Degrees
 /// convert radians to degrees
-real degrees(real radians)
+template<typename T>
+T degrees(T radians)
 {
-	return (radians / PI) * 180_f;
+	return (radians / PI) * T(180);
 }
 
 
