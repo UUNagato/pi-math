@@ -246,7 +246,7 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
 
     template<int rows_ = rows, int cols_ = cols,
         typename std::enable_if_t<IS_VECTOR<rows_, cols_>, int> = 0>
-        PM_INLINE const T& operator[] (size_t index) const {
+        PM_INLINE const T operator[] (size_t index) const {
         if (cols_ == 1)
             return this->data[0][index];
         else

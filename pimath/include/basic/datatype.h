@@ -23,12 +23,12 @@ using uint32 = unsigned long;
 using real = double;
 static constexpr double PI = 3.14159265358979323846;
 static constexpr double INV_PI = 1.0 / PI;
-static constexpr double INV_2PI = 2.0 / PI;
+static constexpr double INV_2PI = INV_PI / 2.0;
 #else
 using real = float;
 static constexpr float PI = 3.14159265359f;
 static constexpr float INV_PI = 1.f / PI;
-static constexpr float INV_2PI = 2.f / PI;
+static constexpr float INV_2PI = INV_PI / 2.f;
 #endif
 
 // from https://github.com/hi2p-perim/lightmetrica-v2

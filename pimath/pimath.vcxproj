@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="include\advanced\mat_special.h" />
     <ClInclude Include="include\advanced\pcgrng.h" />
+    <ClInclude Include="include\advanced\sampling.h" />
     <ClInclude Include="include\basic\datatype.h" />
     <ClInclude Include="include\basic\funcs.h" />
     <ClInclude Include="include\basic\matrix.h" />

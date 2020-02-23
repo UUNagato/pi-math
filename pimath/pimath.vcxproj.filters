@@ -51,6 +51,9 @@
     <ClInclude Include="include\advanced\mat_special.h">
       <Filter>头文件\advanved</Filter>
     </ClInclude>
+    <ClInclude Include="include\advanced\sampling.h">
+      <Filter>头文件\advanved</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tester.cpp">
