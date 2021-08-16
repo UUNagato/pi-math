@@ -228,6 +228,26 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
         }
     }
 
+    static MatrixND Identity() {
+        MatrixND ret;
+        for (int i = 0; i < rows && i < cols; ++i)
+            ret[i][i] = T(1);
+        return ret;
+    }
+
+    // inplace operation
+    MatrixND& Identity_() {
+        for (int i = 0; i < cols; ++i) {
+            for (int j = 0; j < rows; ++j) {
+                if (i == j)
+                    this->data[i][j] = T(1);
+                else
+                    this->data[i][j] = T(0);
+            }
+        }
+        return *this;
+    }
+
     // some basic operators
     template<int rows_ = rows, int cols_ = cols,
         typename std::enable_if_t<IS_VECTOR<rows_, cols_>, int> = 0>
@@ -612,6 +632,72 @@ T determinant(const MatrixND<3, 3, T, ISE>& mat) {
     return mat[0][0] * (mat[1][1] * mat[2][2] - mat[2][1] * mat[1][2]) -
         mat[1][0] * (mat[0][1] * mat[2][2] - mat[2][1] * mat[0][2]) +
         mat[2][0] * (mat[0][1] * mat[1][2] - mat[1][1] * mat[0][2]);
+}
+
+template<typename T, InstSetExt ISE>
+MatrixND<3, 3, T, ISE> inverse(const MatrixND<3, 3, T, ISE>& m) {
+    // This function is adopted from GLM
+    /*
+    ================================================================================
+    OpenGL Mathematics (GLM)
+    --------------------------------------------------------------------------------
+    GLM is licensed under The Happy Bunny License and MIT License
+    ================================================================================
+    The Happy Bunny License (Modified MIT License)
+    --------------------------------------------------------------------------------
+    Copyright (c) 2005 - 2014 G-Truc Creation
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+    Restrictions:
+     By making use of the Software for military purposes, you choose to make a
+     Bunny unhappy.
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+    ================================================================================
+    The MIT License
+    --------------------------------------------------------------------------------
+    Copyright (c) 2005 - 2014 G-Truc Creation
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+     */
+    T OneOverDeterminant = static_cast<T>(1) / determinant(m);
+
+    MatrixND<3, 3, T, ISE> Inverse;
+    Inverse[0][0] = +(m[1][1] * m[2][2] - m[2][1] * m[1][2]) * OneOverDeterminant;
+    Inverse[1][0] = -(m[1][0] * m[2][2] - m[2][0] * m[1][2]) * OneOverDeterminant;
+    Inverse[2][0] = +(m[1][0] * m[2][1] - m[2][0] * m[1][1]) * OneOverDeterminant;
+    Inverse[0][1] = -(m[0][1] * m[2][2] - m[2][1] * m[0][2]) * OneOverDeterminant;
+    Inverse[1][1] = +(m[0][0] * m[2][2] - m[2][0] * m[0][2]) * OneOverDeterminant;
+    Inverse[2][1] = -(m[0][0] * m[2][1] - m[2][0] * m[0][1]) * OneOverDeterminant;
+    Inverse[0][2] = +(m[0][1] * m[1][2] - m[1][1] * m[0][2]) * OneOverDeterminant;
+    Inverse[1][2] = -(m[0][0] * m[1][2] - m[1][0] * m[0][2]) * OneOverDeterminant;
+    Inverse[2][2] = +(m[0][0] * m[1][1] - m[1][0] * m[0][1]) * OneOverDeterminant;
+
+    return Inverse;
 }
 
 template <typename T, InstSetExt ISE>

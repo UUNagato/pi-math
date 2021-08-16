@@ -51,5 +51,8 @@ static constexpr real RInfinity = std::numeric_limits<real>::infinity();
 static constexpr real RMax = std::numeric_limits<real>::max();
 static constexpr real RLowest = std::numeric_limits<real>::lowest();
 
+static constexpr real REpsilon = std::numeric_limits<real>::epsilon();
+static constexpr real RMachineEpsilon = REpsilon / 2_f;
+
 
 PIMATH_NAMESPACE_END
