@@ -19,6 +19,9 @@
     <Filter Include="头文件\advanved">
       <UniqueIdentifier>{d9f5860d-4f9f-470b-a331-d1ae9778eadb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\python">
+      <UniqueIdentifier>{1da4e58e-9cdc-48b8-876e-4411641c7948}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\basic\utils.h">
@@ -58,6 +61,9 @@
   <ItemGroup>
     <ClCompile Include="tester.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="python\pybindings.cpp">
+      <Filter>源文件\python</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

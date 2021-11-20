@@ -2,11 +2,24 @@
 
 // This is the header file for all basic data types
 #include <limits>
+#include <malloc.h>
 #include "basic/datatype.h"
 #include "basic/array.h"
 #include "basic/matrix.h"
 #include "basic/quaternion.h"
 #include "basic/funcs.h"
+
+// two macros for classes
+#define PIMATH_SIMD_OPERATOR_NEW void* operator new(size_t sz) {\
+	return _aligned_malloc(sz, 16);}
+
+#define PIMATH_SIMD_OPERATOR_DELETE void operator delete(void* ptr) {\
+	_aligned_free(ptr);}
+
+#define PIMATH_SIMD_MEMORY_OPERATOR PIMATH_SIMD_OPERATOR_NEW \
+	PIMATH_SIMD_OPERATOR_DELETE
+
+
 
 #define PIMATH_USE_NAMESPACE using namespace PIMATH_NAMESPACE_NAME;
 

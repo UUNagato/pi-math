@@ -133,6 +133,9 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
     template<int cols_ = cols, typename T_ = T, InstSetExt ISE_ = ISE>
     static constexpr bool MATRIX_SSE = ((cols_ == 3) || (cols_ == 4)) && std::is_same<T_, float32>::value && ISE_ >= InstSetExt::SSE;
 
+    static constexpr int nrow = rows;
+    static constexpr int ncol = cols;
+
     // Constructors
     MatrixND() {
     }
@@ -246,6 +249,40 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
             }
         }
         return *this;
+    }
+
+    static MatrixND zeros() {
+        MatrixND ret;
+        for (int c = 0; c < cols; ++c) {
+            for (int r = 0; r < rows; ++r) {
+                this->data[r][c] = T(0);
+            }
+        }
+    }
+
+    MatrixND& zeros_() {
+        for (int c = 0; c < cols; ++c) {
+            for (int r = 0; r < rows; ++r) {
+                this->data[r][c] = T(0);
+            }
+        }
+    }
+
+    static MatrixND ones() {
+        MatrixND ret;
+        for (int c = 0; c < cols; ++c) {
+            for (int r = 0; r < rows; ++r) {
+                this->data[r][c] = T(1);
+            }
+        }
+    }
+
+    MatrixND& ones_() {
+        for (int c = 0; c < cols; ++c) {
+            for (int r = 0; r < rows; ++r) {
+                this->data[r][c] = T(1);
+            }
+        }
     }
 
     // some basic operators
@@ -415,6 +452,18 @@ struct MatrixND : public MatrixBase<rows, cols, T, ISE>
         return *this;
     }
 
+    template<int rows_ = rows, int cols_ = cols, typename T_ = T, InstSetExt ISE_ = ISE>
+    PM_INLINE MatrixND operator/ (const MatrixND& m) const {
+        return MatrixND([=](int c) { return this->data[c] / m.data[c]; });
+    }
+
+    template<int rows_ = rows, int cols_ = cols, typename T_ = T, InstSetExt ISE_ = ISE>
+    PM_INLINE MatrixND& operator/= (const MatrixND& m) {
+        for (int c = 0; c < cols; ++c)
+            this->data[c] = this->data[c] / m.data[c];
+        return *this;
+    }
+
     PM_INLINE MatrixND operator-()
     {
         return MatrixND([=](int i) { return -this->data[i]; });
@@ -521,6 +570,28 @@ public:
 
     }
 
+    template<typename F, std::enable_if_t<std::is_convertible<F, std::function<bool(const T&)>>::value, int> = 0>
+    PM_INLINE bool any(const F& f) {
+        for (int c = 0; c < cols; ++c) {
+            for (int r = 0; r < rows; ++r) {
+                if (f(this->operator()(r, c)))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    template<typename F, std::enable_if_t<std::is_convertible<F, std::function<bool(const T&)>>::value, int> = 0>
+    PM_INLINE bool all(const F& f) {
+        for (int c = 0; c < cols; ++c) {
+            for (int r = 0; r < rows; ++r) {
+                if (f(this->operator()(r, c)) == false)
+                    return false;
+            }
+        }
+        return true;
+    }
+
 	// ===============================================================================
 	// Operations for vectors
 	// ===============================================================================
@@ -616,6 +687,17 @@ MatrixND<rows, cols, T, ISE> cross(const MatrixND<rows, cols, T, ISE>& v1, const
     ret.x = v1.y * v2.z - v1.z * v2.y;
     ret.y = v1.z * v2.x - v1.x * v2.z;
     ret.z = v1.x * v2.y - v1.y * v2.x;
+    return ret;
+}
+
+template<int rows, int cols, typename T, InstSetExt ISE>
+MatrixND<rows, cols, T, ISE> abs(const MatrixND<rows, cols, T, ISE>& m) {
+    MatrixND<rows, cols, T, ISE> ret;
+    for (int i = 0; i < cols; ++i) {
+        for (int j = 0; j < rows; ++j) {
+            ret(j,i) = std::abs(m(j,i));
+        }
+    }
     return ret;
 }
 
